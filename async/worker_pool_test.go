@@ -1,53 +1,12 @@
 package async
 
 import (
-	"context"
 	"fmt"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 )
-
-type testTask struct {
-	status  TaskStatus
-	context context.Context
-	doFunc  func()
-	t       *testing.T
-}
-
-func (t *testTask) Do() {
-	if t.doFunc != nil {
-		t.doFunc()
-	}
-}
-
-func (t *testTask) Context() context.Context {
-	return t.context
-}
-
-func (t *testTask) Status() TaskStatus {
-	return t.status
-}
-
-type easyWaiterTask struct {
-	status  TaskStatus
-	context context.Context
-	t       *testing.T
-	*EasyWait
-}
-
-func (t *easyWaiterTask) Do() {
-	t.status = TaskStatusSuccessful
-}
-
-func (t *easyWaiterTask) Context() context.Context {
-	return t.context
-}
-
-func (t *easyWaiterTask) Status() TaskStatus {
-	return t.status
-}
 
 func TestAddTaskFull(t *testing.T) {
 	opts := WorkerPoolOptions{
@@ -97,4 +56,22 @@ func TestStopFinishAllTasks(t *testing.T) {
 	assert.Equal(t, 0, len(wp.taskQueue), "taskQueue is not empty")
 	assert.Equal(t, true, t1Exec, "task 1 not executed")
 	assert.Equal(t, true, t2Exec, "task 2 not executed")
+}
+
+func TestStartEasyWait(t *testing.T) {
+	opts := WorkerPoolOptions{
+		Workers: 2,
+	}
+	workerPool := NewWorkerPool(opts)
+	workerPool.Start()
+
+	task := easyWaiterTask{
+		EasyWait: NewEasyWait(),
+		t:        t,
+	}
+
+	workerPool.AddTask(&task)
+	(&task).Wait()
+
+	workerPool.Stop()
 }

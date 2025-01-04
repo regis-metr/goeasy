@@ -46,11 +46,7 @@ func (w *worker) doStart() {
 		}
 
 		// TODO: check context deadline
-		task.Do()
-
-		if easyWaiterTask, ok := task.(easyWaiter); ok {
-			easyWaiterTask.done()
-		}
+		doTask(task)
 
 	}
 }

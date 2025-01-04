@@ -19,3 +19,16 @@ type Task interface {
 	Context() context.Context
 	Status() TaskStatus
 }
+
+// Start doing the task
+func Start(task Task) {
+	go doTask(task)
+
+}
+
+func doTask(task Task) {
+	task.Do()
+	if easyWaiterTask, ok := task.(easyWaiter); ok {
+		easyWaiterTask.done()
+	}
+}
