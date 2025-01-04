@@ -15,12 +15,14 @@ type worker struct {
 	taskQueue chan Task
 	status    workerStatus
 	statusMu  sync.Mutex
+	stopChan  chan struct{}
 }
 
 func newWorker(taskQueue chan Task) *worker {
 	return &worker{
 		taskQueue: taskQueue,
 		status:    workerStatusPending,
+		stopChan:  make(chan struct{}),
 	}
 }
 
@@ -38,8 +40,10 @@ func (w *worker) start() {
 
 func (w *worker) doStart() {
 	for w.status == workerStatusWorking {
-		// TODO: stop chan or check if taskQueue is closed
 		task := <-w.taskQueue
+		if task == nil {
+			continue
+		}
 
 		// TODO: check context deadline
 		task.Do()

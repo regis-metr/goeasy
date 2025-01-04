@@ -1,6 +1,10 @@
 package async
 
-import "sync"
+import (
+	"fmt"
+	"sync"
+	"time"
+)
 
 const DefaultMaxQueuedTask = 20
 const DefaultWorkers = 1
@@ -57,7 +61,13 @@ func (wp *WorkerPool) Start() error {
 func (wp *WorkerPool) Stop() error {
 	wp.mu.Lock()
 	defer wp.mu.Unlock()
-	// TODO: make it blocking until all tasks are then then stop workers
+
+	close(wp.taskQueue)
+
+	for len(wp.taskQueue) > 0 {
+		time.Sleep(500 * time.Millisecond)
+	}
+
 	for _, worker := range wp.workers {
 		worker.stop()
 	}
@@ -66,6 +76,10 @@ func (wp *WorkerPool) Stop() error {
 
 // AddTask adds the task the pool of tasks
 func (wp *WorkerPool) AddTask(task Task) error {
-	wp.taskQueue <- task
-	return nil
+	select {
+	case wp.taskQueue <- task:
+		return nil
+	default:
+		return fmt.Errorf("queue is full")
+	}
 }
