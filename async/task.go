@@ -10,6 +10,10 @@ const (
 	TaskStatusFailed     TaskStatus = 2
 )
 
+type TaskWaiter interface {
+	Wait()
+}
+
 type Task interface {
 	Do()
 	Context() context.Context

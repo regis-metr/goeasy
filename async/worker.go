@@ -1,6 +1,8 @@
 package async
 
-import "sync"
+import (
+	"sync"
+)
 
 type workerStatus int
 
@@ -11,14 +13,14 @@ const (
 
 type worker struct {
 	taskQueue chan Task
-	status workerStatus
-	statusMu sync.Mutex
+	status    workerStatus
+	statusMu  sync.Mutex
 }
 
 func newWorker(taskQueue chan Task) *worker {
 	return &worker{
 		taskQueue: taskQueue,
-		status: workerStatusPending,
+		status:    workerStatusPending,
 	}
 }
 
@@ -29,23 +31,28 @@ func (w *worker) start() {
 	if w.status == workerStatusWorking {
 		return
 	}
-
+	w.status = workerStatusWorking
 	go w.doStart()
 
 }
 
 func (w *worker) doStart() {
 	for w.status == workerStatusWorking {
-		task := <- w.taskQueue
-		
+		// TODO: stop chan or check if taskQueue is closed
+		task := <-w.taskQueue
+
 		// TODO: check context deadline
 		task.Do()
+
+		if easyWaiterTask, ok := task.(easyWaiter); ok {
+			easyWaiterTask.done()
+		}
+
 	}
 }
 
 func (w *worker) stop() {
 	w.statusMu.Lock()
 	defer w.statusMu.Unlock()
-
 	w.status = workerStatusPending
 }
