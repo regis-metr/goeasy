@@ -8,24 +8,15 @@ import (
 )
 
 type testTask struct {
-	status  TaskStatus
-	context context.Context
-	doFunc  func()
-	t       *testing.T
+	EasyTask
+	doFunc func()
+	t      *testing.T
 }
 
 func (t *testTask) Do() {
 	if t.doFunc != nil {
 		t.doFunc()
 	}
-}
-
-func (t *testTask) Context() context.Context {
-	return t.context
-}
-
-func (t *testTask) Status() TaskStatus {
-	return t.status
 }
 
 type easyWaiterTask struct {
