@@ -2,12 +2,18 @@ package async
 
 import "context"
 
+// TaskStatus indicates the state of a task
 type TaskStatus int
 
 const (
-	TaskStatusPending    TaskStatus = 0
+	// TaskStatusPending indicates that the task have not yet been processed.
+	TaskStatusPending TaskStatus = 0
+
+	// TaskStatusSuccessful indicates that a task has been successfully processed.
 	TaskStatusSuccessful TaskStatus = 1
-	TaskStatusFailed     TaskStatus = 2
+
+	// TaskStatusSuccessful indicates that a task failed.
+	TaskStatusFailed TaskStatus = 2
 )
 
 // TaskWaiter is an interface for tasks that exposes functionality to wait until

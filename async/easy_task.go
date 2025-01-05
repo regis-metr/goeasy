@@ -25,6 +25,7 @@ type EasyWait struct {
 	doneChan chan struct{}
 }
 
+// NewEasyWait creates a new instance of EasyWait
 func NewEasyWait() *EasyWait {
 	return &EasyWait{
 		doneChan: make(chan struct{}, 1),
