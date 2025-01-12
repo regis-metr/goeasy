@@ -5,8 +5,8 @@ import (
 	"reflect"
 )
 
-var MismatchTypeError error = fmt.Errorf("type mismatch")
-var UnsupportedTypeError error = fmt.Errorf("type unsupported")
+var ErrMismatchType error = fmt.Errorf("type mismatch")
+var ErrUnsupportedType error = fmt.Errorf("type unsupported")
 
 type Mapper struct{}
 
@@ -33,79 +33,79 @@ func (m *Mapper) mapValue(src reflect.Value, dst reflect.Value) error {
 	switch dst.Type().Kind() {
 	case reflect.Bool:
 		if src.Type().Kind() != reflect.Bool {
-			return MismatchTypeError
+			return ErrMismatchType
 		}
 		dst.SetBool(src.Bool())
 	case reflect.Int:
 		if src.Type().Kind() != reflect.Int {
-			return MismatchTypeError
+			return ErrMismatchType
 		}
 		dst.SetInt(src.Int())
 	case reflect.Int8:
 		if src.Type().Kind() != reflect.Int8 {
-			return MismatchTypeError
+			return ErrMismatchType
 		}
 		dst.SetInt(src.Int())
 	case reflect.Int16:
 		if src.Type().Kind() != reflect.Int16 {
-			return MismatchTypeError
+			return ErrMismatchType
 		}
 		dst.SetInt(src.Int())
 	case reflect.Int32:
 		if src.Type().Kind() != reflect.Int32 {
-			return MismatchTypeError
+			return ErrMismatchType
 		}
 		dst.SetInt(src.Int())
 	case reflect.Int64:
 		if src.Type().Kind() != reflect.Int64 {
-			return MismatchTypeError
+			return ErrMismatchType
 		}
 		dst.SetInt(src.Int())
 	case reflect.Uint:
 		if src.Type().Kind() != reflect.Uint {
-			return MismatchTypeError
+			return ErrMismatchType
 		}
 		dst.SetUint(src.Uint())
 	case reflect.Uint8:
 		if src.Type().Kind() != reflect.Uint8 {
-			return MismatchTypeError
+			return ErrMismatchType
 		}
 		dst.SetUint(src.Uint())
 	case reflect.Uint16:
 		if src.Type().Kind() != reflect.Uint16 {
-			return MismatchTypeError
+			return ErrMismatchType
 		}
 		dst.SetUint(src.Uint())
 	case reflect.Uint32:
 		if src.Type().Kind() != reflect.Uint32 {
-			return MismatchTypeError
+			return ErrMismatchType
 		}
 		dst.SetUint(src.Uint())
 	case reflect.Uint64:
 		if src.Type().Kind() != reflect.Uint64 {
-			return MismatchTypeError
+			return ErrMismatchType
 		}
 		dst.SetUint(src.Uint())
 	case reflect.Uintptr:
 		return nil // ignore
 	case reflect.Float32:
 		if src.Type().Kind() != reflect.Float32 {
-			return MismatchTypeError
+			return ErrMismatchType
 		}
 		dst.SetFloat(src.Float())
 	case reflect.Float64:
 		if src.Type().Kind() != reflect.Float64 {
-			return MismatchTypeError
+			return ErrMismatchType
 		}
 		dst.SetFloat(src.Float())
 	case reflect.Complex64:
 		if src.Type().Kind() != reflect.Complex64 {
-			return MismatchTypeError
+			return ErrMismatchType
 		}
 		dst.SetComplex(src.Complex())
 	case reflect.Complex128:
 		if src.Type().Kind() != reflect.Complex128 {
-			return MismatchTypeError
+			return ErrMismatchType
 		}
 		dst.SetComplex(src.Complex())
 	case reflect.Array:
@@ -127,12 +127,12 @@ func (m *Mapper) mapValue(src reflect.Value, dst reflect.Value) error {
 		return nil // TODO
 	case reflect.String:
 		if src.Type().Kind() != reflect.String {
-			return MismatchTypeError
+			return ErrMismatchType
 		}
 		dst.SetString(src.String())
 	case reflect.Struct:
 		if src.Type().Kind() != reflect.Struct {
-			return MismatchTypeError
+			return ErrMismatchType
 		}
 		for i := 0; i < dst.NumField(); i++ {
 			dstField := dst.Field(i)
