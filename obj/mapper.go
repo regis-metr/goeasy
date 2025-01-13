@@ -5,15 +5,18 @@ import (
 	"reflect"
 )
 
+// ErrMismatchType returned when field of source can't be mapped to destination due to mismatched types.
 var ErrMismatchType error = fmt.Errorf("type mismatch")
 var ErrUnsupportedType error = fmt.Errorf("type unsupported")
 
 type Mapper struct{}
 
+// NewMapper creates a new instance of Mapper
 func NewMapper() *Mapper {
 	return &Mapper{}
 }
 
+// Map copies src field values to dst fields. Fields must have the same name.
 func (m *Mapper) Map(src interface{}, dst interface{}) error {
 	srcValue := reflect.ValueOf(src)
 	dstValue := reflect.ValueOf(dst)
