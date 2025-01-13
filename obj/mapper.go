@@ -19,75 +19,38 @@ func NewMapper() *Mapper {
 // Map copies src field values to dst fields. Fields must have the same name.
 // Sample usage:
 //
-// package main
+//	package main
 //
-// import (
-// 	"fmt"
+//	import (
+//		"fmt"
+//		"github.com/bryan-t/goeasy/obj"
+//	)
 //
-// 	"github.com/bryan-t/goeasy/obj"
-// )
+//	type UserDTO struct {
+//		ID   int
+//		Name string
+//	}
 //
-// type UserDTO struct {
-// 	ID   int
-// 	Name string
-// }
+//	type User struct {
+//		ID   int
+//		Name string
+//	}
 //
-// type User struct {
-// 	ID   int
-// 	Name string
-// }
+//	func main() {
+//		dto := UserDTO{
+//			ID:   1,
+//			Name: "John",
+//		}
 //
-// func main() {
-// 	dto := UserDTO{
-// 		ID:   1,
-// 		Name: "John",
-// 	}
+//		user := User{}
+//		mapper := obj.NewMapper()
+//		err := mapper.Map(dto, &user)
+//		if err != nil {
+//			panic(err)
+//		}
 //
-// 	user := User{}
-// 	mapper := obj.NewMapper()
-// 	err := mapper.Map(dto, &user)
-// 	if err != nil {
-// 		panic(err)
-// 	}
-//
-// 	fmt.Printf("user: %+v\n", user)
-// }
-
-package main
-
-import (
-	"fmt"
-
-	"github.com/bryan-t/goeasy/obj"
-)
-
-type UserDTO struct {
-	ID   int
-	Name string
-}
-
-type User struct {
-	ID   int
-	Name string
-}
-
-func main() {
-	dto := UserDTO{
-		ID:   1,
-		Name: "John",
-	}
-
-	user := User{}
-	mapper := obj.NewMapper()
-	err := mapper.Map(dto, &user)
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Printf("user: %+v\n", user)
-}
-
-
+//		fmt.Printf("user: %+v\n", user)
+//	}
 func (m *Mapper) Map(src interface{}, dst interface{}) error {
 	srcValue := reflect.ValueOf(src)
 	dstValue := reflect.ValueOf(dst)
