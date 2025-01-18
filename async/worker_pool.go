@@ -23,6 +23,7 @@ type WorkerPool struct {
 	mu        sync.Mutex
 	workers   []*worker
 	taskQueue chan Task
+	wg        sync.WaitGroup
 }
 
 // NewWorkerPool creates a new instance of WorkerPool
@@ -40,7 +41,7 @@ func NewWorkerPool(options WorkerPoolOptions) *WorkerPool {
 		workers = options.Workers
 	}
 	for i := 0; i < workers; i++ {
-		workerPool.workers = append(workerPool.workers, newWorker(workerPool.taskQueue))
+		workerPool.workers = append(workerPool.workers, newWorker(workerPool.taskQueue, &workerPool.wg))
 	}
 
 	return &workerPool
@@ -71,6 +72,8 @@ func (wp *WorkerPool) Stop() error {
 	for _, worker := range wp.workers {
 		worker.stop()
 	}
+
+	wp.wg.Wait()
 	return nil
 }
 
