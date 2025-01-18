@@ -15,14 +15,14 @@ type worker struct {
 	taskQueue chan Task
 	status    workerStatus
 	statusMu  sync.Mutex
-	stopChan  chan struct{}
+	wg        *sync.WaitGroup
 }
 
-func newWorker(taskQueue chan Task) *worker {
+func newWorker(taskQueue chan Task, wg *sync.WaitGroup) *worker {
 	return &worker{
 		taskQueue: taskQueue,
 		status:    workerStatusPending,
-		stopChan:  make(chan struct{}),
+		wg:        wg,
 	}
 }
 
@@ -39,6 +39,7 @@ func (w *worker) start() {
 }
 
 func (w *worker) doStart() {
+	w.wg.Add(1)
 	for w.status == workerStatusWorking {
 		task := <-w.taskQueue
 		if task == nil {
@@ -49,6 +50,7 @@ func (w *worker) doStart() {
 		doTask(task)
 
 	}
+	w.wg.Done()
 }
 
 func (w *worker) stop() {

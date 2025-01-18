@@ -50,7 +50,9 @@ func TestStopFinishAllTasks(t *testing.T) {
 			t1Exec = true
 		},
 	})
-	wp.AddTask(&testTask{doFunc: func() { t2Exec = true }})
+	wp.AddTask(&testTask{doFunc: func() { 
+		time.Sleep(5 * time.Second)
+		t2Exec = true }})
 	wp.Stop()
 
 	assert.Equal(t, 0, len(wp.taskQueue), "taskQueue is not empty")
