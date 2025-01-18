@@ -2,6 +2,7 @@ package obj
 
 import (
 	"math"
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -57,20 +58,109 @@ func TestMap(t *testing.T) {
 	assert.Equal(t, src, dst, "Not equal")
 }
 
-func TestMapNotAllowedTypes(t *testing.T) {
+func TestMapNoEquivalentField(t *testing.T) {
+	mapper := NewMapper()
+	i := 1
+	src := testAllTypes{
+		Bool:       true,
+		Int:        math.MaxInt,
+		Int8:       math.MaxInt8,
+		Int16:      math.MaxInt16,
+		Int32:      math.MaxInt32,
+		Int64:      math.MaxInt64,
+		Uint:       math.MaxUint,
+		Uint8:      math.MaxUint8,
+		Uint16:     math.MaxUint16,
+		Uint32:     math.MaxUint32,
+		Uint64:     math.MaxUint64,
+		Float32:    math.MaxFloat32,
+		Float64:    math.MaxFloat64,
+		Complex64:  complex(math.MaxFloat32, math.MaxFloat32),
+		Complex128: complex(math.MaxFloat64, math.MaxFloat64),
+		Pointer:    &i,
+		String:     "test",
+	}
+	dst := struct {
+		Int  int
+		Test string
+	}{}
+
+	err := mapper.Map(src, &dst)
+	assert.Nil(t, err, "Map returned an error")
+	assert.Equal(t, src.Int, dst.Int, "Int are not equal")
+	assert.Empty(t, dst.Test)
+}
+
+func TestMapArrayDst(t *testing.T) {
+	type IntStruct struct {
+		Int int
+	}
 	tests := []struct {
 		name string
 		src  interface{}
-		dst  interface{}
-		exp  interface{}
+		dst  [3]IntStruct
+		err  error
+	}{
+		{
+			name: "Equal length array",
+			src:  [3]IntStruct{{1}, {2}, {3}},
+		},
+		{
+			name: "Longer array",
+			src:  [4]IntStruct{{1}, {2}, {3}, {4}},
+			err:  ErrInsufficientCapacity,
+		},
+		{
+			name: "Shorter array",
+			src:  [3]IntStruct{{1}, {2}},
+		},
+		{
+			name: "Equal length slice",
+			src:  []IntStruct{{1}, {2}, {3}},
+		},
+		{
+			name: "Longer slice",
+			src:  []IntStruct{{1}, {2}, {3}, {4}},
+			err:  ErrInsufficientCapacity,
+		},
+		{
+			name: "Shorter slice",
+			src:  make([]IntStruct, 2, 5),
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			mapper := NewMapper()
+			err := mapper.Map(test.src, &test.dst)
+			if err != nil || test.err != nil {
+				assert.Equal(t, test.err, err, "Error not equal")
+				return
+			}
+			srcV := reflect.ValueOf(test.src)
+			for i := range srcV.Len() {
+				v := srcV.Index(i).Field(0)
+				assert.Equal(t, int(v.Int()), test.dst[i].Int, "Has unequal value")
+			}
+		})
+	}
+}
+
+func TestMapMismatchType(t *testing.T) {
+	src := struct {
+		Int    int
+		String string
+		Ptr    *int
 	}{}
-	mapper := NewMapper()
-	for _, scenario := range tests {
-		t.Run(scenario.name, func(t *testing.T) {
-			err := mapper.Map(scenario.src, scenario.dst)
-			assert.Equal(t, ErrMismatchType, err, "Error is not mismatch")
-			assert.Equal(t, scenario.exp, scenario.dst, "Expected and destination is not equal")
-			assert.NotEqual(t, scenario.dst, scenario.src, "Source is copied to destination")
+	tests := []struct {
+		name string
+		dst  interface{}
+	}{}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			mapper := NewMapper()
+
 		})
 	}
 }

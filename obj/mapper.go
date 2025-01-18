@@ -8,6 +8,7 @@ import (
 // ErrMismatchType returned when field of source can't be mapped to destination due to mismatched types.
 var ErrMismatchType error = fmt.Errorf("type mismatch")
 var ErrUnsupportedType error = fmt.Errorf("type unsupported")
+var ErrInsufficientCapacity error = fmt.Errorf("insufficient capacity")
 
 type Mapper struct{}
 
@@ -55,7 +56,7 @@ func (m *Mapper) Map(src interface{}, dst interface{}) error {
 	srcValue := reflect.ValueOf(src)
 	dstValue := reflect.ValueOf(dst)
 
-	if dstValue.Type().Kind() != reflect.Pointer {
+	if dstValue.Type().Kind() != reflect.Pointer && dstValue.Type().Kind() != reflect.Slice {
 		return fmt.Errorf("destination should be pointer")
 	}
 	return m.mapValue(srcValue, dstValue.Elem())
@@ -63,6 +64,10 @@ func (m *Mapper) Map(src interface{}, dst interface{}) error {
 }
 
 func (m *Mapper) mapValue(src reflect.Value, dst reflect.Value) error {
+	if !src.IsValid() || !dst.IsValid() {
+		return nil
+	}
+
 	if src.Type().Kind() == reflect.Pointer {
 		return m.mapValue(src.Elem(), dst)
 	}
@@ -146,6 +151,21 @@ func (m *Mapper) mapValue(src reflect.Value, dst reflect.Value) error {
 		}
 		dst.SetComplex(src.Complex())
 	case reflect.Array:
+		if src.Type().Kind() != reflect.Array && src.Type().Kind() != reflect.Slice {
+			return ErrMismatchType
+		}
+
+		if dst.Cap() < src.Len() {
+			return ErrInsufficientCapacity
+		}
+
+		for i := 0; i < src.Len(); i++ {
+			dstItem := dst.Index(i)
+			err := m.mapValue(src.Index(i), dstItem)
+			if err != nil {
+				return err
+			}
+		}
 		return nil // TODO
 	case reflect.Chan:
 		return nil // ignore
