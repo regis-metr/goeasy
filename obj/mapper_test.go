@@ -1,6 +1,7 @@
 package obj
 
 import (
+	"fmt"
 	"math"
 	"reflect"
 	"testing"
@@ -147,20 +148,126 @@ func TestMapArrayDst(t *testing.T) {
 }
 
 func TestMapMismatchType(t *testing.T) {
+	i := 1
 	src := struct {
 		Int    int
 		String string
 		Ptr    *int
-	}{}
+	}{Ptr: &i}
 	tests := []struct {
 		name string
 		dst  interface{}
-	}{}
+	}{
+		{
+			name: "Bool",
+			dst: struct {
+				Int bool
+			}{},
+		},
+		{
+			name: "Int",
+			dst: struct {
+				String int
+			}{},
+		},
+		{
+			name: "Int8",
+			dst: struct {
+				Int int8
+			}{},
+		},
+		{
+			name: "Int16",
+			dst: struct {
+				Int int8
+			}{},
+		},
+		{
+			name: "Int32",
+			dst: struct {
+				Int int8
+			}{},
+		},
+		{
+			name: "Int64",
+			dst: struct {
+				Int int64
+			}{},
+		},
+		{
+			name: "Uint",
+			dst: struct {
+				Int uint
+			}{},
+		},
+		{
+			name: "Uint8",
+			dst: struct {
+				Int uint8
+			}{},
+		},
+		{
+			name: "Uint16",
+			dst: struct {
+				Int uint16
+			}{},
+		},
+		{
+			name: "Uint32",
+			dst: struct {
+				Int uint32
+			}{},
+		},
+		{
+			name: "Uint64",
+			dst: struct {
+				Int uint64
+			}{},
+		},
+		{
+			name: "Float32",
+			dst: struct {
+				Int float32
+			}{},
+		},
+		{
+			name: "Float64",
+			dst: struct {
+				Int float64
+			}{},
+		},
+		{
+			name: "Complex64",
+			dst: struct {
+				Int complex64
+			}{},
+		},
+		{
+			name: "Complex128",
+			dst: struct {
+				Int complex128
+			}{},
+		},
+		{
+			name: "Pointer",
+			dst: struct {
+				Ptr *int8
+			}{},
+		},
+		{
+			name: "String",
+			dst: struct {
+				Int string
+			}{},
+		},
+	}
 
 	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			mapper := NewMapper()
-
-		})
+		//t.Run(test.name, func(t *testing.T) {
+		mapper := NewMapper()
+		fmt.Printf("Addr: %+v\n", reflect.ValueOf(&test.dst).Elem().Elem().Field(0).Addr())
+		err := mapper.Map(src, &test.dst)
+		assert.Equal(t, ErrMismatchType, err)
+		//})
 	}
 }

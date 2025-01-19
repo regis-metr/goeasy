@@ -64,12 +64,16 @@ func (m *Mapper) Map(src interface{}, dst interface{}) error {
 }
 
 func (m *Mapper) mapValue(src reflect.Value, dst reflect.Value) error {
+
 	if !src.IsValid() || !dst.IsValid() {
 		return nil
 	}
-
-	if src.Type().Kind() == reflect.Pointer {
+	fmt.Printf("src type: %s, dst type: %s\n", src.Type().Kind(), dst.Type().Kind())
+	if src.Type().Kind() == reflect.Pointer || src.Type().Kind() == reflect.Interface {
 		return m.mapValue(src.Elem(), dst)
+	}
+	if dst.Type().Kind() == reflect.Interface {
+		return m.mapValue(src, dst.Elem())
 	}
 
 	switch dst.Type().Kind() {
@@ -172,17 +176,23 @@ func (m *Mapper) mapValue(src reflect.Value, dst reflect.Value) error {
 	case reflect.Func:
 		return nil // ignore
 	case reflect.Interface:
-		return nil // TODO: get underlying type
+
 	case reflect.Map:
 		return nil // TODO
 	case reflect.Pointer:
+		fmt.Println("Went to pointer")
 		if dst.IsNil() {
-			dst.Set(reflect.New(dst.Type().Elem()))
+			new := reflect.New(dst.Type().Elem())
+			fmt.Printf("new: %+v\n", new.Elem().Interface())
+			fmt.Printf("dst: %+v\n", dst.Addr().IsValid())
+			dst.Set(new)
+
 		}
 		return m.mapValue(src, dst.Elem())
 	case reflect.Slice:
 		return nil // TODO
 	case reflect.String:
+
 		if src.Type().Kind() != reflect.String {
 			return ErrMismatchType
 		}
