@@ -1,7 +1,6 @@
 package obj
 
 import (
-	"fmt"
 	"math"
 	"reflect"
 	"testing"
@@ -160,103 +159,103 @@ func TestMapMismatchType(t *testing.T) {
 	}{
 		{
 			name: "Bool",
-			dst: struct {
+			dst: &struct {
 				Int bool
 			}{},
 		},
 		{
 			name: "Int",
-			dst: struct {
+			dst: &struct {
 				String int
 			}{},
 		},
 		{
 			name: "Int8",
-			dst: struct {
+			dst: &struct {
 				Int int8
 			}{},
 		},
 		{
 			name: "Int16",
-			dst: struct {
+			dst: &struct {
 				Int int8
 			}{},
 		},
 		{
 			name: "Int32",
-			dst: struct {
+			dst: &struct {
 				Int int8
 			}{},
 		},
 		{
 			name: "Int64",
-			dst: struct {
+			dst: &struct {
 				Int int64
 			}{},
 		},
 		{
 			name: "Uint",
-			dst: struct {
+			dst: &struct {
 				Int uint
 			}{},
 		},
 		{
 			name: "Uint8",
-			dst: struct {
+			dst: &struct {
 				Int uint8
 			}{},
 		},
 		{
 			name: "Uint16",
-			dst: struct {
+			dst: &struct {
 				Int uint16
 			}{},
 		},
 		{
 			name: "Uint32",
-			dst: struct {
+			dst: &struct {
 				Int uint32
 			}{},
 		},
 		{
 			name: "Uint64",
-			dst: struct {
+			dst: &struct {
 				Int uint64
 			}{},
 		},
 		{
 			name: "Float32",
-			dst: struct {
+			dst: &struct {
 				Int float32
 			}{},
 		},
 		{
 			name: "Float64",
-			dst: struct {
+			dst: &struct {
 				Int float64
 			}{},
 		},
 		{
 			name: "Complex64",
-			dst: struct {
+			dst: &struct {
 				Int complex64
 			}{},
 		},
 		{
 			name: "Complex128",
-			dst: struct {
+			dst: &struct {
 				Int complex128
 			}{},
 		},
 		{
 			name: "Pointer",
-			dst: struct {
+			dst: &struct {
 				Ptr *int8
 			}{},
 		},
 		{
 			name: "String",
-			dst: struct {
+			dst: &struct {
 				Int string
 			}{},
 		},
@@ -265,8 +264,7 @@ func TestMapMismatchType(t *testing.T) {
 	for _, test := range tests {
 		//t.Run(test.name, func(t *testing.T) {
 		mapper := NewMapper()
-		fmt.Printf("Addr: %+v\n", reflect.ValueOf(&test.dst).Elem().Elem().Field(0).Addr())
-		err := mapper.Map(src, &test.dst)
+		err := mapper.Map(src, test.dst)
 		assert.Equal(t, ErrMismatchType, err)
 		//})
 	}

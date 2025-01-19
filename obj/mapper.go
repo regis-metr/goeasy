@@ -180,11 +180,8 @@ func (m *Mapper) mapValue(src reflect.Value, dst reflect.Value) error {
 	case reflect.Map:
 		return nil // TODO
 	case reflect.Pointer:
-		fmt.Println("Went to pointer")
 		if dst.IsNil() {
 			new := reflect.New(dst.Type().Elem())
-			fmt.Printf("new: %+v\n", new.Elem().Interface())
-			fmt.Printf("dst: %+v\n", dst.Addr().IsValid())
 			dst.Set(new)
 
 		}
