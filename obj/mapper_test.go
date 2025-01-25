@@ -1,6 +1,7 @@
 package obj
 
 import (
+	"fmt"
 	"math"
 	"reflect"
 	"testing"
@@ -30,28 +31,36 @@ type testAllTypes struct {
 
 func TestMap(t *testing.T) {
 	i := 1
-	src := testAllTypes{
-		Bool:       true,
-		Int:        math.MaxInt,
-		Int8:       math.MaxInt8,
-		Int16:      math.MaxInt16,
-		Int32:      math.MaxInt32,
-		Int64:      math.MaxInt64,
-		Uint:       math.MaxUint,
-		Uint8:      math.MaxUint8,
-		Uint16:     math.MaxUint16,
-		Uint32:     math.MaxUint32,
-		Uint64:     math.MaxUint64,
-		Float32:    math.MaxFloat32,
-		Float64:    math.MaxFloat64,
-		Complex64:  complex(math.MaxFloat32, math.MaxFloat32),
-		Complex128: complex(math.MaxFloat64, math.MaxFloat64),
-		Pointer:    &i,
-		String:     "test",
+	src := struct {
+		AllTypes testAllTypes
+	}{
+		AllTypes: testAllTypes{
+			Bool:       true,
+			Int:        math.MaxInt,
+			Int8:       math.MaxInt8,
+			Int16:      math.MaxInt16,
+			Int32:      math.MaxInt32,
+			Int64:      math.MaxInt64,
+			Uint:       math.MaxUint,
+			Uint8:      math.MaxUint8,
+			Uint16:     math.MaxUint16,
+			Uint32:     math.MaxUint32,
+			Uint64:     math.MaxUint64,
+			Float32:    math.MaxFloat32,
+			Float64:    math.MaxFloat64,
+			Complex64:  complex(math.MaxFloat32, math.MaxFloat32),
+			Complex128: complex(math.MaxFloat64, math.MaxFloat64),
+			Pointer:    &i,
+			String:     "test",
+		},
 	}
 
 	mapper := NewMapper()
-	dst := testAllTypes{}
+	dst := struct {
+		AllTypes testAllTypes
+	}{
+		AllTypes: testAllTypes{},
+	}
 	err := mapper.Map(src, &dst)
 
 	assert.Nil(t, err, "Map returned an error")
@@ -267,5 +276,92 @@ func TestMapMismatchType(t *testing.T) {
 		err := mapper.Map(src, test.dst)
 		assert.Equal(t, ErrMismatchType, err)
 		//})
+	}
+}
+
+func TestMapSliceDst(t *testing.T) {
+	type IntStruct struct {
+		Int int
+	}
+	tests := []struct {
+		name string
+		src  interface{}
+		dst  []IntStruct
+		err  error
+	}{
+		{
+			name: "Array source",
+			src:  [3]IntStruct{{1}, {2}, {3}},
+		},
+		{
+			name: "Wrong source type",
+			src:  1,
+			err:  ErrMismatchType,
+		},
+		{
+			name: "Slice source",
+			src:  [3]IntStruct{{1}, {2}},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			mapper := NewMapper()
+			err := mapper.Map(test.src, &test.dst)
+			if err != nil || test.err != nil {
+				assert.Equal(t, test.err, err, "Error not equal")
+				return
+			}
+			srcV := reflect.ValueOf(test.src)
+			fmt.Printf("test.dst: %+v\n", test.dst)
+			for i := range srcV.Len() {
+				v := srcV.Index(i).Field(0)
+				assert.Equal(t, int(v.Int()), test.dst[i].Int, "Has unequal value")
+			}
+		})
+	}
+}
+
+func TestMapMapDst(t *testing.T) {
+	type IntStruct struct {
+		Int int
+	}
+	tests := []struct {
+		name string
+		src  interface{}
+		dst  map[int]IntStruct
+		err  error
+	}{
+		{
+			name: "Success",
+			src:  map[int]IntStruct{1: {1}, 2: {2}},
+		},
+		{
+			name: "Wrong source type",
+			src:  1,
+			err:  ErrMismatchType,
+		},
+		{
+			name: "Wrong key type",
+			src:  map[string]IntStruct{"1": {1}},
+			err:  ErrMismatchType,
+		},
+		{
+			name: "Wrong value type",
+			src:  map[int]int{1: 1},
+			err:  ErrMismatchType,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			mapper := NewMapper()
+			err := mapper.Map(test.src, &test.dst)
+			if err != nil || test.err != nil {
+				assert.Equal(t, test.err, err, "Error not equal")
+				return
+			}
+			assert.Equal(t, test.src, test.dst)
+		})
 	}
 }

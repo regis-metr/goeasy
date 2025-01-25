@@ -68,12 +68,8 @@ func (m *Mapper) mapValue(src reflect.Value, dst reflect.Value) error {
 	if !src.IsValid() || !dst.IsValid() {
 		return nil
 	}
-	fmt.Printf("src type: %s, dst type: %s\n", src.Type().Kind(), dst.Type().Kind())
 	if src.Type().Kind() == reflect.Pointer || src.Type().Kind() == reflect.Interface {
 		return m.mapValue(src.Elem(), dst)
-	}
-	if dst.Type().Kind() == reflect.Interface {
-		return m.mapValue(src, dst.Elem())
 	}
 
 	switch dst.Type().Kind() {
@@ -170,24 +166,60 @@ func (m *Mapper) mapValue(src reflect.Value, dst reflect.Value) error {
 				return err
 			}
 		}
-		return nil // TODO
 	case reflect.Chan:
 		return nil // ignore
 	case reflect.Func:
 		return nil // ignore
 	case reflect.Interface:
-
+		return m.mapValue(src, dst.Elem())
 	case reflect.Map:
-		return nil // TODO
+		if src.Type().Kind() != reflect.Map {
+			return ErrMismatchType
+		}
+
+		if dst.IsNil() {
+			dst.Set(reflect.MakeMap(dst.Type()))
+		}
+
+		iter := src.MapRange()
+		for iter.Next() {
+			// map key
+			srcKey := iter.Key()
+			dstKey := reflect.New(dst.Type().Key())
+			err := m.mapValue(srcKey, dstKey)
+			if err != nil {
+				return err
+			}
+
+			// map value
+			srcVal := iter.Value()
+			dstVal := reflect.New(dst.Type().Elem())
+			err = m.mapValue(srcVal, dstVal)
+			if err != nil {
+				return err
+			}
+
+			dst.SetMapIndex(dstKey.Elem(), dstVal.Elem())
+		}
 	case reflect.Pointer:
 		if dst.IsNil() {
 			new := reflect.New(dst.Type().Elem())
 			dst.Set(new)
-
 		}
 		return m.mapValue(src, dst.Elem())
 	case reflect.Slice:
-		return nil // TODO
+		if src.Type().Kind() != reflect.Array && src.Type().Kind() != reflect.Slice {
+			return ErrMismatchType
+		}
+		for i := 0; i < src.Len(); i++ {
+			dstElem := reflect.New(dst.Type().Elem())
+
+			err := m.mapValue(src.Index(i), dstElem.Elem())
+			if err != nil {
+				return err
+			}
+			dst.Set(reflect.Append(dst, dstElem.Elem()))
+		}
 	case reflect.String:
 
 		if src.Type().Kind() != reflect.String {
@@ -210,5 +242,5 @@ func (m *Mapper) mapValue(src reflect.Value, dst reflect.Value) error {
 		return nil // ignore
 
 	}
-	return nil // ignore
+	return nil
 }
