@@ -10,7 +10,9 @@ var ErrMismatchType error = fmt.Errorf("type mismatch")
 var ErrUnsupportedType error = fmt.Errorf("type unsupported")
 var ErrInsufficientCapacity error = fmt.Errorf("insufficient capacity")
 
-type Mapper struct{}
+type Mapper struct {
+	cfg MapperConfig
+}
 
 // NewMapper creates a new instance of Mapper
 func NewMapper() *Mapper {
@@ -230,13 +232,35 @@ func (m *Mapper) mapValue(src reflect.Value, dst reflect.Value) error {
 		if src.Type().Kind() != reflect.Struct {
 			return ErrMismatchType
 		}
+		structMapKey := structMapKey{
+			source: src.Type(),
+			destination: dst.Type(),
+		}
+		fieldMaps := m.cfg.fieldMaps[structMapKey]
 		for i := 0; i < dst.NumField(); i++ {
 			dstField := dst.Field(i)
-			srcField := src.FieldByName(dst.Type().Field(i).Name)
-			err := m.mapValue(srcField, dstField)
+			fieldMap := fieldMaps[dst.Type().Field(i).Name]
+			srcFieldName := dst.Type().Field(i).Name
+			if fieldMap != nil {
+				if len(fieldMap.Source) > 0 {
+					srcFieldName = fieldMap.Source
+				}
+			}
+			srcField := src.FieldByName(srcFieldName)
+			var err error
+			if fieldMap == nil || fieldMap.GetDestinationValue == nil {
+				err = m.mapValue(srcField, dstField)
+			} else {
+				dstValue, err := fieldMap.GetDestinationValue(src.Interface())
+				if err != nil {
+					return err
+				}
+				dstField.Set(reflect.ValueOf(dstValue))
+			}
 			if err != nil {
 				return err
 			}
+
 		}
 	case reflect.UnsafePointer:
 		return nil // ignore
