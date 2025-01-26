@@ -16,7 +16,11 @@ type Mapper struct {
 
 // NewMapper creates a new instance of Mapper
 func NewMapper() *Mapper {
-	return &Mapper{}
+	return &Mapper{
+		cfg: MapperConfig{
+			fieldMaps: make(map[structMapKey]map[string]*FieldMapConfig),
+		},
+	}
 }
 
 // Map copies src field values to dst fields. Fields must have the same name.
@@ -233,7 +237,7 @@ func (m *Mapper) mapValue(src reflect.Value, dst reflect.Value) error {
 			return ErrMismatchType
 		}
 		structMapKey := structMapKey{
-			source: src.Type(),
+			source:      src.Type(),
 			destination: dst.Type(),
 		}
 		fieldMaps := m.cfg.fieldMaps[structMapKey]

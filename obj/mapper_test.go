@@ -365,3 +365,100 @@ func TestMapMapDst(t *testing.T) {
 		})
 	}
 }
+
+func TestMapWithFieldMaps(t *testing.T) {
+	type IntStruct struct {
+		IntField int
+	}
+	type WrappedAllTypes struct {
+		AllTypes testAllTypes
+	}
+	tests := []struct {
+		name      string
+		src       any
+		dst       any
+		cfg       []FieldMapConfig
+		expected  any
+		configErr error
+		mapErr    error
+	}{
+		{
+			name: "Map source to dest field name",
+			src:  testAllTypes{Int: 1},
+			dst:  &IntStruct{},
+			cfg: []FieldMapConfig{{
+				Source:      "Int",
+				Destination: "IntField",
+			}},
+			expected: &IntStruct{1},
+		},
+		{
+			name: "Map source to dest field name with func",
+			src:  testAllTypes{Int: 1},
+			dst:  &IntStruct{},
+			cfg: []FieldMapConfig{{
+				Source:              "Int",
+				Destination:         "IntField",
+				GetDestinationValue: func(source any) (any, error) { return 2, nil },
+			}},
+			expected: &IntStruct{2},
+		},
+		{
+			name: "Map source to dest field name with func error",
+			src:  testAllTypes{Int: 1},
+			dst:  &IntStruct{},
+			cfg: []FieldMapConfig{{
+				Source:              "Int",
+				Destination:         "IntField",
+				GetDestinationValue: func(source any) (any, error) { return nil, fmt.Errorf("Test Error") },
+			}},
+			mapErr: fmt.Errorf("Test Error"),
+		},
+		{
+			name: "With func",
+			src:  testAllTypes{Int: 1},
+			dst:  &testAllTypes{},
+			cfg: []FieldMapConfig{{
+				Destination:         "Int",
+				GetDestinationValue: func(source any) (any, error) { return 2, nil },
+			}},
+			expected: &testAllTypes{Int: 2},
+		},
+		{
+			name: "Struct within struct",
+			src:  WrappedAllTypes{testAllTypes{Int: 1}},
+			dst:  &WrappedAllTypes{testAllTypes{}},
+			cfg: []FieldMapConfig{{
+				Destination:         "Int",
+				GetDestinationValue: func(source any) (any, error) { return 2, nil },
+			}},
+			expected: &WrappedAllTypes{testAllTypes{Int: 2}},
+		},
+	}
+	// TODO: add error cases
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			mapper := NewMapper()
+			var err error
+			if reflect.TypeOf(test.dst).Elem() == reflect.TypeOf(testAllTypes{}) {
+				err = ConfigureFieldMaps[testAllTypes, testAllTypes](mapper, test.cfg...)
+			} else if reflect.TypeOf(test.dst).Elem() == reflect.TypeOf(WrappedAllTypes{}) {
+				err = ConfigureFieldMaps[testAllTypes, testAllTypes](mapper, test.cfg...)
+			} else {
+				err = ConfigureFieldMaps[testAllTypes, IntStruct](mapper, test.cfg...)
+			}
+			if test.configErr != nil || err != nil {
+				assert.Equal(t, test.configErr, err)
+				return
+			}
+
+			err = mapper.Map(test.src, test.dst)
+			if test.mapErr != nil || err != nil {
+				assert.Equal(t, test.mapErr, err)
+				return
+			}
+			assert.Equal(t, test.expected, test.dst)
+		})
+	}
+}

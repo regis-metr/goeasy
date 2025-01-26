@@ -23,7 +23,7 @@ type MapperConfig struct {
 }
 
 // ConfigureFieldMaps allows overriding of how fields are mapped for sourceT and destinationT
-func ConfigureFieldMaps[sourceT any, destinationT any](mapperConfig *MapperConfig,
+func ConfigureFieldMaps[sourceT any, destinationT any](mapper *Mapper,
 	fieldMapConfigs ...FieldMapConfig) error {
 	var zeroSource sourceT
 	var zeroDestination destinationT
@@ -38,7 +38,7 @@ func ConfigureFieldMaps[sourceT any, destinationT any](mapperConfig *MapperConfi
 		destination: destinationType,
 	}
 
-	fieldMap := mapperConfig.fieldMaps[structKey]
+	fieldMap := mapper.cfg.fieldMaps[structKey]
 	if fieldMap == nil {
 		fieldMap = make(map[string]*FieldMapConfig)
 	}
@@ -50,6 +50,6 @@ func ConfigureFieldMaps[sourceT any, destinationT any](mapperConfig *MapperConfi
 
 		fieldMap[cfg.Destination] = &cfg
 	}
-	mapperConfig.fieldMaps[structKey] = fieldMap
+	mapper.cfg.fieldMaps[structKey] = fieldMap
 	return nil
 }
