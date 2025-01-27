@@ -462,3 +462,32 @@ func TestMapWithFieldMaps(t *testing.T) {
 		})
 	}
 }
+
+func TestConfigureFieldMapsSourceNotStruct(t *testing.T) {
+	mapper := NewMapper()
+	cfg := FieldMapConfig{
+		Source:      "Int",
+		Destination: "Int",
+	}
+	err := ConfigureFieldMaps[int, testAllTypes](mapper, cfg)
+	assert.Equal(t, fmt.Errorf("sourceT and destinationT must be structs"), err)
+}
+
+func TestConfigureFieldMapsDestinationNotStruct(t *testing.T) {
+	mapper := NewMapper()
+	cfg := FieldMapConfig{
+		Source:      "Int",
+		Destination: "Int",
+	}
+	err := ConfigureFieldMaps[testAllTypes, int](mapper, cfg)
+	assert.Equal(t, fmt.Errorf("sourceT and destinationT must be structs"), err)
+}
+
+func TestConfigureFieldMapsDestinationFieldEmpty(t *testing.T) {
+	mapper := NewMapper()
+	cfg := FieldMapConfig{
+		Source: "Int",
+	}
+	err := ConfigureFieldMaps[testAllTypes, testAllTypes](mapper, cfg)
+	assert.Equal(t, fmt.Errorf("destination field names must be provided"), err)
+}
