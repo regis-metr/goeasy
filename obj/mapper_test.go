@@ -631,4 +631,30 @@ func TestMapWithSetterNoField(t *testing.T) {
 	assert.Equal(t, dto.ID, user.withSetterID, "ID not equal")
 }
 
+func TestMapWithSetterAndFieldMap(t *testing.T) {
+
+	dto := testUserDTO{
+		ID:             1,
+		withGetterName: "John",
+	}
+
+	user := testUserWithSetter{}
+	mapper := NewMapper()
+	err := ConfigureFieldMaps[testUserDTO, testUserWithSetter](mapper, FieldMapConfig{
+		Source:      "Name",
+		Destination: "Name",
+		GetDestinationValue: func(source any) (any, error) {
+			return "Mr. " + source.(string), nil
+		},
+	})
+
+	assert.Nil(t, err, "ConfigureFieldMaps returned an error")
+
+	err = mapper.Map(dto, &user)
+
+	assert.Nil(t, err, "Map returned an error")
+	assert.Equal(t, dto.ID, user.withSetterID, "ID not equal")
+	assert.Equal(t, "Mr. Mr. John", user.withSetterName, "Name not equal")
+}
+
 // AI generated code end
