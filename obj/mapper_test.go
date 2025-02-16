@@ -313,7 +313,6 @@ func TestMapSliceDst(t *testing.T) {
 				return
 			}
 			srcV := reflect.ValueOf(test.src)
-			fmt.Printf("test.dst: %+v\n", test.dst)
 			for i := range srcV.Len() {
 				v := srcV.Index(i).Field(0)
 				assert.Equal(t, int(v.Int()), test.dst[i].Int, "Has unequal value")
@@ -491,3 +490,145 @@ func TestConfigureFieldMapsDestinationFieldEmpty(t *testing.T) {
 	err := ConfigureFieldMaps[testAllTypes, testAllTypes](mapper, cfg)
 	assert.Equal(t, fmt.Errorf("destination field names must be provided"), err)
 }
+
+// AI generated code start
+type testUserDTO struct {
+	ID             int
+	withGetterName string
+}
+
+type testUser struct {
+	ID   int
+	Name string
+}
+
+func (u testUserDTO) GetName() string {
+	return "Mr. " + u.withGetterName
+}
+
+func TestMapWithGetter(t *testing.T) {
+	dto := testUserDTO{
+		ID:             1,
+		withGetterName: "John",
+	}
+
+	user := testUser{}
+	mapper := NewMapper()
+	err := mapper.Map(dto, &user)
+
+	assert.Nil(t, err, "Map returned an error")
+	assert.Equal(t, dto.ID, user.ID, "ID not equal")
+	assert.Equal(t, "Mr. John", user.Name, "Name not equal")
+}
+
+type testUserWithSetter struct {
+	withSetterID   int
+	withSetterName string
+}
+
+func (u *testUserWithSetter) SetID(id int) {
+	u.withSetterID = id
+}
+
+func (u *testUserWithSetter) SetName(name string) {
+	u.withSetterName = name
+}
+
+func TestMapWithSetter(t *testing.T) {
+	dto := testUserDTO{
+		ID:             1,
+		withGetterName: "John",
+	}
+
+	user := testUserWithSetter{}
+	mapper := NewMapper()
+	err := mapper.Map(dto, &user)
+
+	assert.Nil(t, err, "Map returned an error")
+	assert.Equal(t, dto.ID, user.withSetterID, "ID not equal")
+	assert.Equal(t, dto.GetName(), user.withSetterName, "Name not equal")
+}
+
+type testUserWithDifferentSetter struct {
+	withSetterID   int
+	withSetterName string
+}
+
+func (u *testUserWithDifferentSetter) SetID(id int64) {
+	u.withSetterID = int(id)
+}
+
+func (u *testUserWithDifferentSetter) SetName(name string) {
+	u.withSetterName = name
+}
+
+func TestMapWithDifferentSetter(t *testing.T) {
+	dto := testUserDTO{
+		ID:             1,
+		withGetterName: "John",
+	}
+
+	user := testUserWithDifferentSetter{}
+	mapper := NewMapper()
+	err := mapper.Map(dto, &user)
+
+	assert.Equal(t, ErrMismatchType, err, "Error not equal")
+	assert.Equal(t, 0, user.withSetterID, "ID not equal")
+	assert.Equal(t, "", user.withSetterName, "Name not equal")
+}
+
+type testUserWithGetterAndSetter struct {
+	withGetterSetterID   int
+	withGetterSetterName string
+}
+
+func (u *testUserWithGetterAndSetter) SetID(id int) {
+	u.withGetterSetterID = id
+}
+
+func (u *testUserWithGetterAndSetter) SetName(name string) {
+	u.withGetterSetterName = name
+}
+
+func (u testUserDTO) GetID() int {
+	return u.ID
+}
+
+func TestMapWithGetterAndSetter(t *testing.T) {
+	dto := testUserDTO{
+		ID:             1,
+		withGetterName: "John",
+	}
+
+	user := testUserWithGetterAndSetter{}
+	mapper := NewMapper()
+	err := mapper.Map(dto, &user)
+
+	assert.Nil(t, err, "Map returned an error")
+	assert.Equal(t, dto.GetID(), user.withGetterSetterID, "ID not equal")
+	assert.Equal(t, dto.GetName(), user.withGetterSetterName, "Name not equal")
+}
+
+type testUserWithSetterNoField struct {
+	withSetterID int
+}
+
+func (u *testUserWithSetterNoField) SetID(id int) {
+	u.withSetterID = id
+}
+
+func TestMapWithSetterNoField(t *testing.T) {
+	dto := testUserDTO{
+		ID:             1,
+		withGetterName: "John",
+	}
+
+	user := testUserWithSetterNoField{}
+	mapper := NewMapper()
+	err := mapper.Map(dto, &user)
+
+	assert.Nil(t, err, "Map returned an error")
+	assert.Equal(t, dto.ID, user.withSetterID, "ID not equal")
+}
+
+// AI generated code end

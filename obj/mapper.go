@@ -10,6 +10,11 @@ var ErrMismatchType error = fmt.Errorf("type mismatch")
 var ErrUnsupportedType error = fmt.Errorf("type unsupported")
 var ErrInsufficientCapacity error = fmt.Errorf("insufficient capacity")
 
+// AI generated code start
+var ErrFieldNotFound error = fmt.Errorf("field not found")
+
+// AI generated code end
+
 type Mapper struct {
 	cfg MapperConfig
 }
@@ -252,6 +257,15 @@ func (m *Mapper) mapValue(src reflect.Value, dst reflect.Value) error {
 			}
 			srcField := src.FieldByName(srcFieldName)
 			var err error
+			if !srcField.IsValid() {
+				// AI generated code block start
+				getterName := "Get" + srcFieldName
+				getterMethod := src.MethodByName(getterName)
+				if getterMethod.IsValid() && getterMethod.Type().NumIn() == 0 && getterMethod.Type().NumOut() == 1 {
+					srcField = getterMethod.Call(nil)[0]
+				}
+				// AI generated code block end
+			}
 			if fieldMap == nil || fieldMap.GetDestinationValue == nil {
 				err = m.mapValue(srcField, dstField)
 			} else {
@@ -264,8 +278,37 @@ func (m *Mapper) mapValue(src reflect.Value, dst reflect.Value) error {
 			if err != nil {
 				return err
 			}
-
 		}
+		// AI generated code block start
+		// Handle setter methods
+		dstType := dst.Addr().Type()
+		for i := 0; i < dstType.NumMethod(); i++ {
+			method := dstType.Method(i)
+			if method.Name[:3] == "Set" && method.Type.NumIn() == 2 && method.Type.NumOut() == 0 {
+				fieldName := method.Name[3:]
+				srcField := src.FieldByName(fieldName)
+				if !srcField.IsValid() {
+					getterName := "Get" + fieldName
+					getterMethod := src.MethodByName(getterName)
+					if getterMethod.IsValid() && getterMethod.Type().NumIn() == 0 && getterMethod.Type().NumOut() == 1 {
+						srcField = getterMethod.Call(nil)[0]
+					} else {
+						return ErrFieldNotFound
+					}
+				}
+				if srcField.IsValid() {
+					paramType := method.Type.In(1)
+					paramValue := reflect.New(paramType).Elem()
+					err := m.mapValue(srcField, paramValue)
+					if err != nil {
+						return err
+					}
+					setterMethod := dst.Addr().MethodByName(method.Name)
+					setterMethod.Call([]reflect.Value{paramValue})
+				}
+			}
+		}
+		// AI generated code block end
 	case reflect.UnsafePointer:
 		return nil // ignore
 
