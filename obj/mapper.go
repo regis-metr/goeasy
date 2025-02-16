@@ -10,6 +10,11 @@ var ErrMismatchType error = fmt.Errorf("type mismatch")
 var ErrUnsupportedType error = fmt.Errorf("type unsupported")
 var ErrInsufficientCapacity error = fmt.Errorf("insufficient capacity")
 
+// AI generated code start
+var ErrFieldNotFound error = fmt.Errorf("field not found")
+
+// AI generated code end
+
 type Mapper struct {
 	cfg MapperConfig
 }
@@ -236,39 +241,115 @@ func (m *Mapper) mapValue(src reflect.Value, dst reflect.Value) error {
 		if src.Type().Kind() != reflect.Struct {
 			return ErrMismatchType
 		}
-		structMapKey := structMapKey{
-			source:      src.Type(),
-			destination: dst.Type(),
+		err := m.mapStructFields(src, dst)
+		if err != nil {
+			return err
 		}
-		fieldMaps := m.cfg.fieldMaps[structMapKey]
-		for i := 0; i < dst.NumField(); i++ {
-			dstField := dst.Field(i)
-			fieldMap := fieldMaps[dst.Type().Field(i).Name]
-			srcFieldName := dst.Type().Field(i).Name
-			if fieldMap != nil {
-				if len(fieldMap.Source) > 0 {
-					srcFieldName = fieldMap.Source
-				}
-			}
-			srcField := src.FieldByName(srcFieldName)
-			var err error
-			if fieldMap == nil || fieldMap.GetDestinationValue == nil {
-				err = m.mapValue(srcField, dstField)
-			} else {
-				dstValue, err := fieldMap.GetDestinationValue(src.Interface())
-				if err != nil {
-					return err
-				}
-				dstField.Set(reflect.ValueOf(dstValue))
-			}
-			if err != nil {
-				return err
-			}
-
+		err = m.mapStructSetters(src, dst)
+		if err != nil {
+			return err
 		}
 	case reflect.UnsafePointer:
 		return nil // ignore
 
 	}
+	return nil
+}
+
+func (m *Mapper) mapStructFields(src reflect.Value, dst reflect.Value) error {
+	structMapKey := structMapKey{
+		source:      src.Type(),
+		destination: dst.Type(),
+	}
+	fieldMaps := m.cfg.fieldMaps[structMapKey]
+	for i := 0; i < dst.NumField(); i++ {
+		dstField := dst.Field(i)
+		fieldMap := fieldMaps[dst.Type().Field(i).Name]
+		srcFieldName := dst.Type().Field(i).Name
+		if fieldMap != nil {
+			if len(fieldMap.Source) > 0 {
+				srcFieldName = fieldMap.Source
+			}
+		}
+		srcField := src.FieldByName(srcFieldName)
+		var err error
+		if !srcField.IsValid() {
+			// AI generated code block start
+			getterName := "Get" + srcFieldName
+			getterMethod := src.MethodByName(getterName)
+			if getterMethod.IsValid() && getterMethod.Type().NumIn() == 0 && getterMethod.Type().NumOut() == 1 {
+				srcField = getterMethod.Call(nil)[0]
+			}
+			// AI generated code block end
+		}
+		if fieldMap == nil || fieldMap.GetDestinationValue == nil {
+			err = m.mapValue(srcField, dstField)
+		} else {
+			dstValue, err := fieldMap.GetDestinationValue(src.Interface())
+			if err != nil {
+				return err
+			}
+			dstField.Set(reflect.ValueOf(dstValue))
+		}
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (m *Mapper) mapStructSetters(src reflect.Value, dst reflect.Value) error {
+	// AI generated code block start
+	// Handle setter methods
+	dstType := dst.Addr().Type()
+	structMapKey := structMapKey{
+		source:      src.Type(),
+		destination: dst.Type(),
+	}
+	fieldMaps := m.cfg.fieldMaps[structMapKey]
+	for i := 0; i < dstType.NumMethod(); i++ {
+		method := dstType.Method(i)
+		if method.Name[:3] == "Set" && method.Type.NumIn() == 2 && method.Type.NumOut() == 0 {
+			fieldName := method.Name[3:]
+			srcFieldName := fieldName
+			var fieldMap *FieldMapConfig
+			if fm, ok := fieldMaps[fieldName]; ok {
+				fieldMap = fm
+				if len(fieldMap.Source) > 0 {
+					srcFieldName = fieldMap.Source
+				}
+			}
+			srcField := src.FieldByName(srcFieldName)
+			if !srcField.IsValid() {
+				getterName := "Get" + srcFieldName
+				getterMethod := src.MethodByName(getterName)
+				if getterMethod.IsValid() && getterMethod.Type().NumIn() == 0 && getterMethod.Type().NumOut() == 1 {
+					srcField = getterMethod.Call(nil)[0]
+				} else {
+					return ErrFieldNotFound
+				}
+			}
+			if srcField.IsValid() {
+				var paramValue reflect.Value
+				if fieldMap == nil || fieldMap.GetDestinationValue == nil {
+					paramType := method.Type.In(1)
+					paramValue = reflect.New(paramType).Elem()
+					err := m.mapValue(srcField, paramValue)
+					if err != nil {
+						return err
+					}
+				} else {
+					dstValue, err := fieldMap.GetDestinationValue(srcField.Interface())
+					if err != nil {
+						return err
+					}
+					paramValue = reflect.ValueOf(dstValue)
+				}
+				setterMethod := dst.Addr().MethodByName(method.Name)
+				setterMethod.Call([]reflect.Value{paramValue})
+			}
+		}
+	}
+	// AI generated code block end
 	return nil
 }
