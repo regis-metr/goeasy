@@ -182,6 +182,9 @@ func (m *Mapper) mapValue(src reflect.Value, dst reflect.Value) error {
 	case reflect.Func:
 		return nil // ignore
 	case reflect.Interface:
+		if !dst.Elem().IsValid() {
+			dst.Set(reflect.New(src.Type()))
+		}
 		return m.mapValue(src, dst.Elem())
 	case reflect.Map:
 		if src.Type().Kind() != reflect.Map {
