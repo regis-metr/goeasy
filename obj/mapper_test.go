@@ -657,4 +657,165 @@ func TestMapWithSetterAndFieldMap(t *testing.T) {
 	assert.Equal(t, "Mr. Mr. John", user.withSetterName, "Name not equal")
 }
 
+// AI generated code start
+func TestMapWithInterfaceField(t *testing.T) {
+	type StructWithInterface struct {
+		Data interface{}
+	}
+
+	tests := []struct {
+		name     string
+		src      StructWithInterface
+		dst      StructWithInterface
+		expected interface{}
+		err      error
+	}{
+		{
+			name:     "String interface",
+			src:      StructWithInterface{Data: "test string"},
+			dst:      StructWithInterface{},
+			expected: "test string",
+		},
+		{
+			name:     "Int interface",
+			src:      StructWithInterface{Data: 42},
+			dst:      StructWithInterface{},
+			expected: 42,
+		},
+		{
+			name:     "Struct interface",
+			src:      StructWithInterface{Data: testAllTypes{Int: 1, String: "test"}},
+			dst:      StructWithInterface{},
+			expected: testAllTypes{Int: 1, String: "test"},
+		},
+		{
+			name:     "Nil interface",
+			src:      StructWithInterface{Data: nil},
+			dst:      StructWithInterface{},
+			expected: nil,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			mapper := NewMapper()
+			err := mapper.Map(test.src, &test.dst)
+			assert.Equal(t, test.err, err, "Error not equal")
+			assert.Equal(t, test.expected, test.dst.Data, "Data not equal")
+		})
+	}
+}
+
+func TestMapWithInterfaceFieldMismatch(t *testing.T) {
+	type StructWithInterface struct {
+		Data interface{}
+	}
+
+	tests := []struct {
+		name string
+		src  StructWithInterface
+		dst  StructWithInterface
+		err  error
+	}{
+		{
+			name: "Mismatch type",
+			src:  StructWithInterface{Data: "string"},
+			dst:  StructWithInterface{Data: 42},
+			err:  ErrMismatchType,
+		},
+		{
+			name: "Unsupported type",
+			src:  StructWithInterface{Data: func() {}},
+			dst:  StructWithInterface{},
+			err:  nil,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			mapper := NewMapper()
+			err := mapper.Map(test.src, &test.dst)
+			assert.Equal(t, test.err, err, "Error not equal")
+		})
+	}
+}
+// AI generated code end
+
+// AI generated code start
+func TestMapWithNestedInterfaceField(t *testing.T) {
+	type InnerStruct struct {
+		Data interface{}
+	}
+
+	type OuterStruct struct {
+		Inner interface{}
+	}
+
+	tests := []struct {
+		name     string
+		src      OuterStruct
+		dst      OuterStruct
+		expected interface{}
+		err      error
+	}{
+		{
+			name: "Nested string interface",
+			src:  OuterStruct{Inner: InnerStruct{Data: "test string"}},
+			dst:  OuterStruct{},
+			expected: InnerStruct{
+				Data: "test string",
+			},
+		},
+		{
+			name: "Nested int interface",
+			src:  OuterStruct{Inner: InnerStruct{Data: 42}},
+			dst:  OuterStruct{},
+			expected: InnerStruct{
+				Data: 42,
+			},
+		},
+		{
+			name: "Nested struct interface",
+			src:  OuterStruct{Inner: InnerStruct{Data: testAllTypes{Int: 1, String: "test"}}},
+			dst:  OuterStruct{},
+			expected: InnerStruct{
+				Data: testAllTypes{Int: 1, String: "test"},
+			},
+		},
+		{
+			name: "Nested nil interface",
+			src:  OuterStruct{Inner: InnerStruct{Data: nil}},
+			dst:  OuterStruct{},
+			expected: InnerStruct{
+				Data: nil,
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			mapper := NewMapper()
+			err := mapper.Map(test.src, &test.dst)
+			assert.Equal(t, test.err, err, "Error not equal")
+			assert.Equal(t, test.expected, test.dst.Inner, "Inner not equal")
+		})
+	}
+}
+// AI generated code end
+
+// AI generated code start
+func TestMapNotAddressable(t *testing.T) {
+	type TestStruct struct {
+		Field int
+	}
+
+	src := TestStruct{Field: 42}
+	dst := TestStruct{}
+
+	mapper := NewMapper()
+	err := mapper.Map(src, dst) // Passing non-addressable value as destination
+
+	assert.Equal(t, ErrNotAddresable, err, "Error not equal")
+}
+
 // AI generated code end
