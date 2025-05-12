@@ -66,7 +66,9 @@ func NewMapper() *Mapper {
 func (m *Mapper) Map(src interface{}, dst interface{}) error {
 	srcValue := reflect.ValueOf(src)
 	dstValue := reflect.ValueOf(dst)
-	if dstValue.Type().Kind() == reflect.Pointer { dstValue = dstValue.Elem() }
+	if dstValue.Type().Kind() == reflect.Pointer {
+		dstValue = dstValue.Elem()
+	}
 	if !dstValue.CanAddr() {
 		return ErrNotAddresable
 	}
@@ -182,8 +184,12 @@ func (m *Mapper) mapValue(src reflect.Value, dst reflect.Value) error {
 		return nil // ignore
 	case reflect.Interface:
 		if dst.Elem().IsValid() {
+			if !dst.Elem().CanAddr() { // for structs with interface fields, value in it is always not addressable
+				return ErrNotAddresable
+			}
 			return m.mapValue(src, dst.Elem())
 		}
+
 		newVal := reflect.New(src.Type())
 		err := m.mapValue(src, newVal)
 		if err != nil {
@@ -292,7 +298,7 @@ func (m *Mapper) mapStructFields(src reflect.Value, dst reflect.Value) error {
 		if fieldMap == nil || fieldMap.GetDestinationValue == nil {
 			err = m.mapValue(srcField, dstField)
 		} else {
-			dstValue, err := fieldMap.GetDestinationValue(src.Interface())
+			dstValue, err := fieldMap.GetDestinationValue(srcField.Interface())
 			if err != nil {
 				return err
 			}

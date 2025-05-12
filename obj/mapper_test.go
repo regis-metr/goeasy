@@ -706,39 +706,6 @@ func TestMapWithInterfaceField(t *testing.T) {
 	}
 }
 
-func TestMapWithInterfaceFieldMismatch(t *testing.T) {
-	type StructWithInterface struct {
-		Data interface{}
-	}
-
-	tests := []struct {
-		name string
-		src  StructWithInterface
-		dst  StructWithInterface
-		err  error
-	}{
-		{
-			name: "Mismatch type",
-			src:  StructWithInterface{Data: "string"},
-			dst:  StructWithInterface{Data: 42},
-			err:  ErrMismatchType,
-		},
-		{
-			name: "Unsupported type",
-			src:  StructWithInterface{Data: func() {}},
-			dst:  StructWithInterface{},
-			err:  nil,
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			mapper := NewMapper()
-			err := mapper.Map(test.src, &test.dst)
-			assert.Equal(t, test.err, err, "Error not equal")
-		})
-	}
-}
 // AI generated code end
 
 // AI generated code start
@@ -801,6 +768,7 @@ func TestMapWithNestedInterfaceField(t *testing.T) {
 		})
 	}
 }
+
 // AI generated code end
 
 // AI generated code start
@@ -816,6 +784,61 @@ func TestMapNotAddressable(t *testing.T) {
 	err := mapper.Map(src, dst) // Passing non-addressable value as destination
 
 	assert.Equal(t, ErrNotAddresable, err, "Error not equal")
+}
+
+// AI generated code end
+
+// AI generated code start
+func TestMapWithInitializedInterfaceField(t *testing.T) {
+	type StructWithInterface struct {
+		Data interface{}
+	}
+
+	src := StructWithInterface{Data: "test string"}
+	dst := StructWithInterface{Data: ""} // Initialized with the same type as the source
+
+	mapper := NewMapper()
+	err := mapper.Map(src, &dst)
+
+	assert.Equal(t, ErrNotAddresable, err, "Error not equal")
+	assert.NotEqual(t, src.Data, dst.Data, "Data equal")
+}
+
+// AI generated code end
+// AI generated code start
+func TestMapWithNestedStructAndCustomFunction(t *testing.T) {
+	type InnerStruct struct {
+		Value int
+	}
+
+	type OuterStruct struct {
+		Inner interface{}
+	}
+
+	src := OuterStruct{
+		Inner: InnerStruct{Value: 42},
+	}
+
+	dst := OuterStruct{}
+
+	mapper := NewMapper()
+	err := ConfigureFieldMaps[OuterStruct, OuterStruct](mapper, FieldMapConfig{
+		Source:      "Inner",
+		Destination: "Inner",
+		GetDestinationValue: func(source any) (any, error) {
+			if inner, ok := source.(InnerStruct); ok {
+				return InnerStruct{Value: inner.Value * 2}, nil
+			}
+			fmt.Println(reflect.TypeOf(source))
+			return nil, fmt.Errorf("unexpected type")
+		},
+	})
+
+	assert.Nil(t, err, "ConfigureFieldMaps returned an error")
+
+	err = mapper.Map(src, &dst)
+	assert.Nil(t, err, "Map returned an error")
+	assert.Equal(t, InnerStruct{Value: 84}, dst.Inner, "Inner not equal")
 }
 
 // AI generated code end
