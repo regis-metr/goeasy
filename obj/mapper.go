@@ -7,8 +7,8 @@ import (
 
 // ErrMismatchType returned when field of source can't be mapped to destination due to mismatched types.
 var ErrMismatchType error = fmt.Errorf("type mismatch")
-var ErrUnsupportedType error = fmt.Errorf("type unsupported")
 var ErrInsufficientCapacity error = fmt.Errorf("insufficient capacity")
+var ErrNotAddresable error = fmt.Errorf("not addressable")
 
 // AI generated code start
 var ErrFieldNotFound error = fmt.Errorf("field not found")
@@ -66,16 +66,17 @@ func NewMapper() *Mapper {
 func (m *Mapper) Map(src interface{}, dst interface{}) error {
 	srcValue := reflect.ValueOf(src)
 	dstValue := reflect.ValueOf(dst)
-
-	if dstValue.Type().Kind() != reflect.Pointer && dstValue.Type().Kind() != reflect.Slice {
-		return fmt.Errorf("destination should be pointer")
+	if dstValue.Type().Kind() == reflect.Pointer {
+		dstValue = dstValue.Elem()
 	}
-	return m.mapValue(srcValue, dstValue.Elem())
+	if !dstValue.CanAddr() {
+		return ErrNotAddresable
+	}
+	return m.mapValue(srcValue, dstValue)
 
 }
 
 func (m *Mapper) mapValue(src reflect.Value, dst reflect.Value) error {
-
 	if !src.IsValid() || !dst.IsValid() {
 		return nil
 	}
@@ -182,7 +183,19 @@ func (m *Mapper) mapValue(src reflect.Value, dst reflect.Value) error {
 	case reflect.Func:
 		return nil // ignore
 	case reflect.Interface:
-		return m.mapValue(src, dst.Elem())
+		if dst.Elem().IsValid() {
+			if !dst.Elem().CanAddr() { // for structs with interface fields, value in it is always not addressable
+				return ErrNotAddresable
+			}
+			return m.mapValue(src, dst.Elem())
+		}
+
+		newVal := reflect.New(src.Type())
+		err := m.mapValue(src, newVal)
+		if err != nil {
+			return err
+		}
+		dst.Set(newVal.Elem())
 	case reflect.Map:
 		if src.Type().Kind() != reflect.Map {
 			return ErrMismatchType
@@ -285,7 +298,7 @@ func (m *Mapper) mapStructFields(src reflect.Value, dst reflect.Value) error {
 		if fieldMap == nil || fieldMap.GetDestinationValue == nil {
 			err = m.mapValue(srcField, dstField)
 		} else {
-			dstValue, err := fieldMap.GetDestinationValue(src.Interface())
+			dstValue, err := fieldMap.GetDestinationValue(srcField.Interface())
 			if err != nil {
 				return err
 			}
